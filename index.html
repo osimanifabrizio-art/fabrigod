@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Acceso al Baño - Pagar $1000</title>
+  <title>Acceso al Baño - QR Escaneado</title>
   <style>
-    /* ---- Estilos generales ---- */
     body {
       font-family: Arial, Helvetica, sans-serif;
       display: flex;
@@ -39,35 +38,13 @@
       font-size: 17px;
     }
 
-    button {
-      margin-top: 14px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      width: 100%;
-      max-width: 280px;
-      transition: background 0.2s;
-    }
-
-    #payBtn {
-      background: #20b38a;
-      color: white;
-    }
-
-    #payBtn:hover {
-      background: #1b9b75;
-    }
-
     #status {
       margin-top: 14px;
       font-size: 15px;
       color: #333;
     }
 
-    /* ---- Adaptación para pantallas pequeñas ---- */
+    /* Adaptación móvil */
     @media (max-width: 480px) {
       body {
         background: #e9eef3;
@@ -84,9 +61,6 @@
       p {
         font-size: 16px;
       }
-      button {
-        font-size: 15px;
-      }
       #status {
         font-size: 14px;
       }
@@ -95,60 +69,32 @@
 </head>
 <body>
   <div class="card">
-    <h1>Entrar al Baño</h1>
-    <p>Precio: $1000</p>
-
-    <button id="payBtn">Pagar $1000</button>
-
-    <div id="status">Estado: esperando pago</div>
+    <h1>QR Escaneado ✅</h1>
+    <p>Pago confirmado con éxito.</p>
+    <div id="status">Encendiendo luces...</div>
   </div>
 
   <script>
-    let port = null;
-    let writer = null;
-    const payBtn = document.getElementById('payBtn');
-    const statusDiv = document.getElementById('status');
+    // Esta página asume que el Arduino ya está conectado desde la página anterior
+    // y que existen 'port' y 'writer' en la sesión global (si se abrió desde la misma pestaña)
 
-    function setStatus(txt) {
-      statusDiv.textContent = 'Estado: ' + txt;
-    }
-
-    // Conectar Arduino
-    async function connectArduino() {
-      if (port && writer) return true;
+    async function encenderLuces() {
       try {
-        port = await navigator.serial.requestPort(); // usuario selecciona Arduino
-        await port.open({ baudRate: 9600 });
-        const encoder = new TextEncoderStream();
-        encoder.readable.pipeTo(port.writable);
-        writer = encoder.writable.getWriter();
-        setStatus("Arduino conectado");
-        return true;
+        if (window.writer) {
+          await window.writer.write("LED\n"); // Comando al Arduino
+          document.getElementById('status').textContent = "Luces encendidas.";
+        } else {
+          // Si no hay conexión previa, solo muestra el estado
+          document.getElementById('status').textContent = "Sin conexión previa al Arduino.";
+        }
       } catch (err) {
         console.error(err);
-        setStatus("Error al conectar: " + err.message);
-        return false;
+        document.getElementById('status').textContent = "Error enviando comando.";
       }
     }
 
-    // Botón pagar
-    payBtn.addEventListener('click', async () => {
-      if (confirm("Simular pago de $1000. ¿Aceptar?")) {
-        setStatus("Pago recibido. Conectando con Arduino...");
-        const ok = await connectArduino();
-        if (ok) {
-          try {
-            await writer.write("LED\n"); // comando que va al Arduino
-            setStatus("Comando enviado: LED");
-            alert("LED intermitente activado en Arduino.");
-          } catch (err) {
-            console.error(err);
-            setStatus("Error enviando: " + err.message);
-          }
-        }
-      }
-    });
+    // Simula que el QR fue escaneado y enciende las luces
+    window.addEventListener('load', encenderLuces);
   </script>
 </body>
 </html>
-
