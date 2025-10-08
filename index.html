@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acceso al Baño - Pagar $1000</title>
+  <style>
+    /* ---- Estilos generales ---- */
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f6f7fb;
+    }
+
+    .card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(20, 20, 50, 0.08);
+      text-align: center;
+      width: 90%;
+      max-width: 350px;
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: #222;
+    }
+
+    p {
+      margin: 8px 0;
+      color: #555;
+      font-size: 17px;
+    }
+
+    button {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      max-width: 280px;
+      transition: background 0.2s;
+    }
+
+    #payBtn {
+      background: #20b38a;
+      color: white;
+    }
+
+    #payBtn:hover {
+      background: #1b9b75;
+    }
+
+    #status {
+      margin-top: 14px;
+      font-size: 15px;
+      color: #333;
+    }
+
+    /* ---- Adaptación para pantallas pequeñas ---- */
+    @media (max-width: 480px) {
+      body {
+        background: #e9eef3;
+        padding: 10px;
+      }
+      .card {
+        padding: 20px;
+        width: 100%;
+        max-width: 320px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      p {
+        font-size: 16px;
+      }
+      button {
+        font-size: 15px;
+      }
+      #status {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Entrar al Baño</h1>
+    <p>Precio: $1000</p>
+
+    <button id="payBtn">Pagar $1000</button>
+
+    <div id="status">Estado: esperando pago</div>
+  </div>
+
+  <script>
+    let port = null;
+    let writer = null;
+    const payBtn = document.getElementById('payBtn');
+    const statusDiv = document.getElementById('status');
+
+    function setStatus(txt) {
+      statusDiv.textContent = 'Estado: ' + txt;
+    }
+
+    // Conectar Arduino
+    async function connectArduino() {
+      if (port && writer) return true;
+      try {
+        port = await navigator.serial.requestPort(); // usuario selecciona Arduino
+        await port.open({ baudRate: 9600 });
+        const encoder = new TextEncoderStream();
+        encoder.readable.pipeTo(port.writable);
+        writer = encoder.writable.getWriter();
+        setStatus("Arduino conectado");
+        return true;
+      } catch (err) {
+        console.error(err);
+        setStatus("Error al conectar: " + err.message);
+        return false;
+      }
+    }
+
+    // Botón pagar
+    payBtn.addEventListener('click', async () => {
+      if (confirm("Simular pago de $1000. ¿Aceptar?")) {
+        setStatus("Pago recibido. Conectando con Arduino...");
+        const ok = await connectArduino();
+        if (ok) {
+          try {
+            await writer.write("LED\n"); // comando que va al Arduino
+            setStatus("Comando enviado: LED");
+            alert("LED intermitente activado en Arduino.");
+          } catch (err) {
+            console.error(err);
+            setStatus("Error enviando: " + err.message);
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
